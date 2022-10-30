@@ -1,24 +1,53 @@
 <?php
-    $conn = new mysqli('db403-mysql', 'root', 'P@ssw0rd', 'northwind');
-    if ($conn->connect_errno){
-        die($conn->connect_errno);
-    }
+session_start();
+include 'db_connect.php'; // เชื่อมต่อฐานข้อมูลผ่านไฟล์ db_connect.php
 
     //if isset($_POST['email']);
     //echo $_POST['email'];
     //echo isset($_POST['submit']) ? $_POST['email'] : ''; // ถ้ามีข้อมูลให้โขว์ ถ้าไม่มีไม่ต้องแสดง
+
     $domain_error = false;
     if (isset($_POST['submit'])) {
     $domain = substr($_POST['email'], -10);
     $domain_error = strtolower ($domain) != '@dpu.ac.th';
-    if (!$domain_error) {
-        $sql = "insert into registration(fname,lanme,gender,dob,email,password) )";
-        $sql .= "values('{$_POST['fname']}', '{$_POST['lname']}', '{$_POST['gender']}', '{$_POST['dob']}', '{$_POST['email']}', ";
-        $sql .= "'".password_hash($_POST['email'], PASSWORD_DEFAULT);
-        $sql .= "')";
-        echo $sql;
+        if (!$domain_error) {
+        // $sql = "insert into registration(fname,lname,gender,dob,email,password)";
+        // $sql .= "values('{$_POST['fname']}', '{$_POST['lname']}', '{$_POST['gender']}', '{$_POST['dob']}', '{$_POST['email']}', ";
+        // $sql .= "'".password_hash($_POST['email'], PASSWORD_DEFAULT);
+        // $sql .= "')";
+        // echo $sql;
+
+        $sql = 'insert into registration(fname,lname,gender,dob,email,password) values(?,?,?,?,?,?) ';
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param('ssssss', 
+            $_POST['fname'], 
+            $_POST['lname'], 
+            $_POST['gender'], 
+            $_POST['dob'], 
+            $_POST['email'],
+            $password
+        );
+
+        $password = password_hash(
+            $_POST['password'],
+            PASSWORD_DEFAULT
+        );
+
+        try {
+            $stmt->execute();
+            // $conn->query($sql);
+            // echo 'Successful registration';
+            // unset($_POST['submit']);
+            $_SESSION['email'] = $_POST['email'];
+            header('location: welcome.php');
+            exit();
+            } catch (Exception $e) {
+            echo "Error: $sql<br>{$e->getMessage()}";
+            }
+            $stmt->close();
+        }
     }
-    }
+$conn->close();
 ?>
 <!DOCTYPE html>
 <html lang="en">
